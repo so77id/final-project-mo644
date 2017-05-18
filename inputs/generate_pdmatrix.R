@@ -4,6 +4,8 @@
 # So, the program in C has to read the entry by line.			#
 #-----------------------------------------------------------------------#
 
+library(matrixcalc)
+
 # enter with your path
 path = "/Users/almeida/Dropbox/Unicamp/Disciplinas/MO644/Trabalho/input/matriz_"
 
