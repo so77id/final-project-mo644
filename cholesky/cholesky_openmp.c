@@ -3,7 +3,7 @@
 #include <math.h>
 
 double *cholesky(double *A, int n) {
-	double *L = (double *)malloc(n*sizeof(double));
+	double *L = (double *)malloc(n*n*sizeof(double));
 	if (L == NULL)
 		exit(EXIT_FAILURE);
 	
@@ -42,7 +42,7 @@ int main() {
 	
 	// A matriz sera alocada na forma de vetor
 	// Alocando a memoria para o vetor m
-	m = (double *)malloc(n*sizeof(double));
+	m = (double *)malloc(n*n*sizeof(double));
 	
 	for (int i = 0; i < n; i++) {
 		for (int j = 0; j < n; j++)
