@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <omp.h>
 
 double *cholesky(double *A, int n) {
 	double *L = (double *)malloc(n*n*sizeof(double));
@@ -36,6 +37,7 @@ void show_matrix(double *A, int n) {
 int main() {
 	int n;
 	double *m;
+	double start, end;
 	
 	// Dimensao da matriz
 	scanf("%d",&n);
@@ -49,9 +51,14 @@ int main() {
 			scanf("%lf", &m[i * n + j]);
 	}
 	
+	start = omp_get_wtime();
 	double *c1 = cholesky(m, n);
 	show_matrix(c1, n);
+	end = omp_get_wtime();
+	
 	printf("\n");
+	printf("%lf\n",end-start);
+	
 	free(c1);
 	
 	return 0;
