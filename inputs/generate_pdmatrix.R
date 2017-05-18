@@ -18,13 +18,13 @@ for(j in 1:length(k)){
 		M[,i] <- runif(n, 1, 50)
 	}
 	
-	#create means for each column
+	# create means for each column
 	M_mean <- matrix(data=1, nrow=n) %*% apply(M, 2, mean)
 	
-	#creates a difference matrix
+	# creates a difference matrix
 	D <- M - M_mean
 	
-	#creates the sample covariance matrix
+	# creates the sample covariance matrix
 	C <- cov(D)
 	
 	# avoid floating numbers
