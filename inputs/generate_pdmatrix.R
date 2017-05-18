@@ -1,3 +1,8 @@
+#-----------------------------------------------------------------------#
+# The first line contains the dimension of matrix.			#
+# The second one is a vector that contains all values of our entry.	#
+# So, the program in C has to read the entry by line.			#
+#-----------------------------------------------------------------------#
 
 # enter with your path
 path = "/Users/almeida/Dropbox/Unicamp/Disciplinas/MO644/Trabalho/input/matriz_"
