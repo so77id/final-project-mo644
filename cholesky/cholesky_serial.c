@@ -46,6 +46,8 @@ int main() {
 	// Numero de threads
 	scanf("%d",&nt);
 	
+	nt=2; // mudar enquanto esta testando, depois colocamos como input junto no arquivo in
+	
 	// Dimensao da matriz m
 	scanf("%d",&n);
 	
