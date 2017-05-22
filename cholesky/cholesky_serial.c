@@ -3,36 +3,48 @@
 #include <math.h>
 #include <omp.h>
 
-double *cholesky(double *A, int n) {
-	double *L = (double *)malloc(n*n*sizeof(double));
-	if (L == NULL)
+double *cholesky(double *A, int n){
+	
+	// Inicializando a matriz L com zeros
+	double *L = (double *)calloc(n*n, sizeof(double));
+	
+	int i, j, k;
+	double s;
+	
+	if(L == NULL)
 		exit(EXIT_FAILURE);
 	
-	for (int i = 0; i < n; i++)
-		for (int j = 0; j < (i+1); j++) {
-			double s = 0;
-			for (int k = 0; k < j; k++)
+	// Faz a decomposicao de cholesky pelas linhas (modo nao paralelizavel)
+	// Nos algoritmos com openmp e pthreads foi necessario reescrever esse trecho de codigo
+	// de modo a torná-lo paralelizavel
+	for(i = 0; i < n; i++)
+		for(j = 0; j < (i+1); j++) {
+			s = 0.0;
+			for(k = 0; k < j; k++)
 				s += L[i * n + k] * L[j * n + k];
-			L[i * n + j] = (i == j) ?
-			sqrt(A[i * n + i] - s) :
-				(1.0 / L[j * n + j] * (A[i * n + j] - s));
+			if(i == j) L[i * n + j] = sqrt(A[i * n + i] - s);
+			else L[i * n + j] = (1.0 / L[j * n + j] * (A[i * n + j] - s));
 		}
-		
 		return L;
 }
 
 void show_matrix(double *A, int n) {
-	for (int i = 0; i < n; i++) {
-		for (int j = 0; j < n; j++)
-			printf("%2.5f ", A[i * n + j]);
+	int i, j;
+	
+	for(i = 0; i < n; i++) {
+		for(j = 0; j < n; j++)
+			printf("%.5f ", A[i * n + j]);
 		printf("\n");
 	}
 }
 
 int main() {
-	int n;
+	int n, nt, i, j;
 	double *m;
 	double start, end;
+	
+	// Numero de threads
+	scanf("%d",&nt);
 	
 	// Dimensao da matriz m
 	scanf("%d",&n);
@@ -41,20 +53,18 @@ int main() {
 	// Alocando a memoria para o vetor m
 	m = (double *)malloc(n*n*sizeof(double));
 	
-	for (int i = 0; i < n; i++) {
-		for (int j = 0; j < n; j++)
+	for(i = 0; i < n; i++) {
+		for(j = 0; j < n; j++)
 			scanf("%lf", &m[i * n + j]);
 	}
 	
 	start = omp_get_wtime();
 	double *c1 = cholesky(m, n);
 	end = omp_get_wtime();
+	printf("%lf\n",end-start);
 	
 	show_matrix(c1, n);
 	printf("\n");
-	
-	printf("%lf\n",end-start);
-	
 	free(c1);
 	
 	return 0;
