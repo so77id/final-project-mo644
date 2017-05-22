@@ -3,21 +3,32 @@
 #include <math.h>
 #include <omp.h>
 
-double *cholesky(double *A, int n) {
-	double *L = (double *)malloc(n*n*sizeof(double));
+
+double *cholesky(double *A, int n, int nt) {
+	double *L = (double *)calloc(n*n,sizeof(double));
+	int j, k, i;
+	double s;
+	
 	if (L == NULL)
 		exit(EXIT_FAILURE);
 	
-	for (int j = 0; j <n; j++) {            
-		double s = 0;
-		for (int k = 0; k < j; k++) {
+	// Faz a decomposicao de cholesky pelas colunas
+	for(j = 0; j < n; j++) {
+		s = 0.0;
+		
+		// eh necessario obter a diagonal antes de paralelizar os outros elementos
+		# pragma omp parallel for num_threads(nt) default(none) shared(L, n, j) private(k) reduction(+: s)
+		for(k = 0; k < j; k++) {
 			s += L[j * n + k] * L[j * n + k];
 		}
+		
 		L[j * n + j] = sqrt(A[j * n + j] - s);
-		#pragma omp parallel for
-		for (int i = j+1; i <n; i++) {
-			double s = 0;
-			for (int k = 0; k < j; k++) {
+		
+		// obtendo os outros elementos da coluna (exceto a diagonal)
+		#pragma omp parallel for num_threads(nt) private(i, k, s) shared(j, n, L, A)
+		for(i = j+1; i <n; i++) {
+			s = 0.0;
+			for(k = 0; k < j; k++) {
 				s += L[i * n + k] * L[j * n + k];
 			}
 			L[i * n + j] = (1.0 / L[j * n + j] * (A[i * n + j] - s));
@@ -35,30 +46,33 @@ void show_matrix(double *A, int n) {
 }
 
 int main() {
-	int n;
+	int n, nt;
 	double *m;
 	double start, end;
+	
+	// Numero de threads
+	scanf("%d",&nt);
 	
 	// Dimensao da matriz
 	scanf("%d",&n);
 	
 	// A matriz sera alocada na forma de vetor
 	// Alocando a memoria para o vetor m
-	m = (double *)malloc(n*n*sizeof(double));
+	m = (double *)calloc(n*n,sizeof(double));
 	
 	for (int i = 0; i < n; i++) {
 		for (int j = 0; j < n; j++)
 			scanf("%lf", &m[i * n + j]);
 	}
 	
-	start = omp_get_wtime();
-	double *c1 = cholesky(m, n);
-	show_matrix(c1, n);
-	end = omp_get_wtime();
 	
-	printf("\n");
+	start = omp_get_wtime();
+	double *c1 = cholesky(m, n, nt);
+	end = omp_get_wtime();
 	printf("%lf\n",end-start);
 	
+	show_matrix(c1, n);
+	printf("\n");
 	free(c1);
 	
 	return 0;
