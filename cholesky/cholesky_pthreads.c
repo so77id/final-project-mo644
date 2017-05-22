@@ -4,6 +4,11 @@
 #include <sys/time.h>
 #include <pthread.h>
 
+// Comentarios iniciais
+// o programa ainda nao funciona, nao sei o motivo
+
+
+// variaveis globais
 int e, n, nt;
 double *L, *A;
 double sum;
@@ -21,6 +26,8 @@ void *diag(void* rank){
 	
 	s = 0.0;
 	
+	// Caso o valor de j (ou e) nao seja divisivel pelo numero de threads
+	// alocamos os valores que ainda faltam de j na ultima thread
 	if(my_rank==nt-1){
 		aux = (my_last_k - my_first_k + 1)*nt;
 		if(aux != e) my_last_k = my_last_k + e - aux;
@@ -30,6 +37,8 @@ void *diag(void* rank){
 		s += L[e * n + k] * L[e * n + k];
 	}
 	
+	// calculamos o valor de s localmente em cada thread e depois incorporamos na variavel global sum
+	// o mutex serve para nao ter conflito na hora de atualizar
 	pthread_mutex_lock(&lock);
 	sum = sum + s;
 	pthread_mutex_unlock(&lock);
@@ -41,6 +50,7 @@ void *rest(int j, int n, double *L, double *A, int nt){
 	int i, k;
 	double s;
 	
+	// nao mexi nessa parte, ainda tem que parelelizar o for anterior
 	//#pragma omp parallel for num_threads(nt) private(i, k, s) shared(j, n, L, A)
 	for(i = j+1; i <n; i++){
 		s = 0.0;
@@ -72,6 +82,8 @@ double *cholesky(double *A, int n, int nt){
 		// eh necessario obter a diagonal antes de paralelizar os outros elementos
 		sum = 0;
 		e = j;
+		
+		// nao faz sentido paralelizar quando o valor de j eh menor do que o numero de threads
 		if(j >= nt){
 			for(thread = 0; thread < nt; thread++){
 				pthread_create(&thread_handles[thread], NULL, diag, (void*) thread);
