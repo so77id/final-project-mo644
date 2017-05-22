@@ -1,0 +1,166 @@
+\documentclass[12pt]{article}
+
+\usepackage[portuges]{babel} % Region format pt-br
+\usepackage[latin9]{inputenc} % Caracteres e acentos
+\usepackage{enumerate} % Listas
+\usepackage{setspace} % Espaçamento de linha
+\usepackage{color} % Cores no texto
+\usepackage{graphicx} % Imagens
+\usepackage{hyperref}
+\usepackage{csquotes}
+\usepackage{amsmath}
+\usepackage{geometry}
+\usepackage{subcaption}
+\usepackage{placeins}
+\usepackage{amssymb}
+\usepackage[]{algorithm2e}
+
+
+\geometry{a4paper,total={210mm,297mm},left=20mm,right=20mm,top=20mm,bottom=30mm,}
+\graphicspath{ {imgs/} } % Path com imagens
+
+\def\changemargin#1#2{\list{}{\rightmargin#2\leftmargin#1}\item[]} % Função para mexer nas margens de paragrafos
+\let\endchangemargin=\endlist 
+
+\begin{document}
+
+%---------------------------------------------------------------------------------
+%	Capa
+%---------------------------------------------------------------------------------
+
+\begin{titlepage}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.4mm}} % Defines a new command for the horizontal lines, change thickness here
+
+\begin{center}
+
+\begin{figure}[h]
+	\centering
+	\begin{subfigure}[b]{.1\linewidth}
+		\includegraphics[width=\linewidth]{!-logo_unicamp}
+	\end{subfigure}
+	\begin{subfigure}[b]{.1\linewidth}
+		\includegraphics[width=\linewidth]{!-logo_ic}
+	\end{subfigure}
+\end{figure}
+
+\textsc{\large Universidade Estadual de Campinas}\\[0.1cm]
+\textsc{\normalsize Instituto de Computação}\\[3.5cm]
+\textsc{\large MO644 - Introdução à Programação Paralela}
+
+\HRule \\[0.2cm]
+
+\setstretch{2}
+{\Large \bfseries Projeto Final}
+\HRule \\[2cm]
+
+\doublespacing
+
+\begin{minipage}{0.5\textwidth}
+\begin{flushleft} \normalsize
+\emph{Alunos:} \par
+147512, Nathália Menini Cardoso dos Santos \\
+192744,	Miguel Antonio Rodriguez Santander
+\end{flushleft}
+\end{minipage}
+~
+\begin{minipage}{0.45\textwidth}
+\begin{flushright} \normalsize
+\emph{Professor:} \par
+Guido Araújo
+\end{flushright}
+\end{minipage}\\[8cm]
+
+{\large XX de XXXX de 2017}\\[3cm]
+
+\vfill
+
+\end{center}
+\end{titlepage}
+
+%---------------------------------------------------------------------------------
+%	Conteúdo
+%---------------------------------------------------------------------------------
+
+\setlength{\parindent}{3em}
+\setlength{\parskip}{0.7em}
+\setstretch{1.3}
+\setcounter{page}{1}
+\setcounter{figure}{0}
+
+
+\begin{changemargin}{1.2cm}{1.2cm}
+	\begin{center}
+		\bfseries Resumo \par
+	\end{center}
+	\setlength{\parindent}{1em}
+	
+	Processos que utilizam matrizes são muito comuns em diversas áreas do conhecimento. O tempo de computação destes métodos está diretamente relacionado com a dimensão de tais estruturas matemáticas, assim, resolver os problemas de grandes matrizes significa um maior tempo de processamento. Um problema simples, porém muito recorrente, pode ser a resolução de um sistema linear, em que o número de operações pode se tornar relativamente grande, dependendo da aplicação em questão. No âmbito desse problema, alguns métodos como a Fatoração de Cholesky são adotados. Nessa linha, temos a intenção de fazer uma comparação exaustiva do método de Cholesky usando algumas ferramentas estudadas em aula (OpenMP, Pthreads e CUDA). Esta comparação permitirá observar e analisar como o desempenho do algoritmo pode ser melhorado quando implementado em paralelo.
+	
+\end{changemargin}
+
+\section{Introdução}
+
+\section{Fatoração de Cholesky}
+\label{sec:cholesky}
+
+Sejam $A \in {\rm I\!M}_n({\rm I\!R})$ uma matriz positiva-definida e um elemento $b\in {\rm I\!R}^n$. Consideremos o problema de encontrar $x^* \in {\rm I\!R}^m$ solução do sistema linear positivo-definido $$Ax=b.$$ Podemos obter uma solução numérica através da Fatoração de Cholesky da matriz $A$, garantida pelo teorema abaixo, cuja demonstração pode ser encontrada em [1].
+
+\noindent
+\textbf{Teorema} \hspace{.1cm}\textit{ Seja $A \in {\rm I\!M}_n({\rm I\!R})$ uma matriz positiva definida. Então, existe uma única matriz triangular superior $G$, com os elementos da diagonal principal positivos, tal que $A=G^tG$.}
+
+Em Algorithm \ref{algo:serial} mostramos o algoritmo serial de Cholesky (retirado de [2]). Após uma rigorosa análise, percebemos que o algoritmo está calculando iterativamente as linhas de $G^t$ (indicada no algoritmo por $L$), de modo que a linha $i+1$ depende dos resultados obtidos na iteração $i$, gerando assim um \textit{loop} DOACROSS. Além disso, no laço interno temos que o valor de $j+1$ depende do resultado de $j$, gerando um \textit{loop carried dependence}. Entretando, se trocarmos a ordem dos laços referentes as linhas e colunas ($i$ e $j$) e anticiparmos o calculo da diagonal principal, não teríamos mais dependencia entre o \textit{loop} interno (agora em $i$), porém, o laço externo continua não paralelizável. Em Algorithm \ref{algo:serial2} exibimos esse novo código serial, que agora pode ser paralelizado. Portanto, daqui para frente, utilizaremos sempre o Algorithm \ref{algo:serial2}.
+
+\begin{algorithm}[h]
+	\For{$i=0,...,n-1$}{
+		\For{$j=0,...,i$}{
+		double $s = 0.0$\;
+			\For{$k=0,...,j-1$}{
+				$s = s + L[i*n+k]*L[j*n+k]$\;
+			}
+			\eIf{$i==j$}{
+				$L[i*n+j]=\text{sqrt}(A[i*n+i]-s)$\;
+			}{
+				$L[i*n+j]=1/L[j*n+j]*(A[i*n+j]-s)$\;
+			}
+	}
+}
+\caption{Algoritmo serial não paralelizável da Fatoração de Cholesky}
+\label{algo:serial}
+\end{algorithm}
+
+\begin{algorithm}[h]
+	\For{$j=0,...,n-1$}{
+		double $s = 0.0$\;
+		\For{$k=0,...,j-1$}{
+			$s = s + L[j*n+k]*L[j*n+k]$\;
+		}
+		$L[j*n+j]=\text{sqrt}(A[j*n+j]-s)$\;
+		
+		\For{$i=j+1,...,n-1$}{
+			double $s = 0.0$\;
+			\For{$k=0,...,j-1$}{
+				$s = s + L[i*n+k]*L[j*n+k]$\;
+			}
+			$L[i*n+j]=1/L[j*n+j]*(A[i*n+j]-s)$\;
+		}
+	}
+\caption{Algoritmo serial paralelizável da Fatoração de Cholesky}
+\label{algo:serial2}
+\end{algorithm}
+\FloatBarrier
+
+\section{\textit{Profile}}
+
+\section{Descrição da paralelização}
+
+\section{Resultados}
+
+\section{Referências Bibliográficas} 
+
+[1] Pulino, P. \textit{``Álgebra Linear e suas Aplicações: Notas de Aula"}. (2004)
+
+\hspace{-1.2cm}[2] \url{https://rosettacode.org/wiki/Cholesky_decomposition#C} [Acessado em 22/05/2017]
+
+
+\end{document}
