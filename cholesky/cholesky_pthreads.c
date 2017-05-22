@@ -129,12 +129,14 @@ int main() {
 	struct timeval start, end;
 	
 	// Numero de threads
-	scanf("%d",&nt);
+	//scanf("%d",&nt);
+	// mudar manualmente enquanto esta testando, depois colocamos como input junto no arquivo in
 	
 	nt=2; // mudar enquanto esta testando, depois colocamos como input junto no arquivo in
 	
 	// Dimensao da matriz
 	scanf("%d",&n);
+	
 	
 	// A matriz sera alocada na forma de vetor
 	// Alocando a memoria para o vetor m
