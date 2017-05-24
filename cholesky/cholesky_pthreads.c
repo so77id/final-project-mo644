@@ -9,47 +9,60 @@
 
 
 // variaveis globais
-int e, n, nt;
-double *L, *A;
-double sum;
-pthread_mutex_t lock;
+// int e, n, nt;
+//double *L, *A;
+//double sum;
+//pthread_mutex_t lock;
 
-void *diag(void* rank){
+struct worker_data {
+	int e;
+	int n_threads;
+	double *m_dst;
+	double *m_src;
+	double sum;
+	unsigned int i_thread;
+	int size;
+
+	pthread_mutex_t *mutex;
+};
+
+void *diag_worker(void* arg){
+
+	struct worker_data *dd = arg;
+
 	int k;
 	double s;
-	
-	long my_rank = (long) rank; // Pega o numero da thread
-	int local_m = e/nt;
+
+	long my_rank = dd->i_thread; // Pega o numero da thread
+	int local_m = dd->e/dd->n_threads;
 	int my_first_k = my_rank*local_m;
 	int my_last_k = (my_rank+1)*local_m-1;
 	int aux;
-	
+
 	s = 0.0;
-	
+
 	// Caso o valor de j (ou e) nao seja divisivel pelo numero de threads
 	// alocamos os valores que ainda faltam de j na ultima thread
-	if(my_rank==nt-1){
-		aux = (my_last_k - my_first_k + 1)*nt;
-		if(aux != e) my_last_k = my_last_k + e - aux;
+
+	if(my_rank==dd->n_threads-1){
+		aux = (my_last_k - my_first_k + 1)*dd->n_threads;
+		if(aux != dd->e) my_last_k = my_last_k + dd->e - aux;
 	}
-	
+
 	for(k = my_first_k; k <= my_last_k; k++){
-		s += L[e * n + k] * L[e * n + k];
+		dd->sum += dd->m_dst[dd->e * dd->size + k] * dd->m_dst[dd->e * dd->size + k];
 	}
-	
+
 	// calculamos o valor de s localmente em cada thread e depois incorporamos na variavel global sum
 	// o mutex serve para nao ter conflito na hora de atualizar
-	pthread_mutex_lock(&lock);
-	sum = sum + s;
-	pthread_mutex_unlock(&lock);
-	
+
 	return NULL;
 }
 
-void *rest(int j, int n, double *L, double *A, int nt){
+void *rest_worker(int j, int n, double *L, double *A, int nt){
 	int i, k;
 	double s;
-	
+
 	// nao mexi nessa parte, ainda tem que parelelizar o for anterior
 	//#pragma omp parallel for num_threads(nt) private(i, k, s) shared(j, n, L, A)
 	for(i = j+1; i <n; i++){
@@ -59,62 +72,81 @@ void *rest(int j, int n, double *L, double *A, int nt){
 		}
 		L[i * n + j] = (1.0 / L[j * n + j] * (A[i * n + j] - s));
 	}
-	
+
 	return NULL;
 }
 
-double *cholesky(double *A, int n, int nt){
-	double *L = (double *)calloc(n*n,sizeof(double));
+double *cholesky(double *m_src, int size, int n_threads){
+	double *m_dst = (double *)calloc(size*size,sizeof(double));
 	int j, k, i;
 	double s;
-	long thread;
+	double sum;
+	unsigned int i_thread;
 	pthread_t* thread_handles;
-	
-	thread_handles = malloc (nt*sizeof(pthread_t));
-	
-	
-	if (L == NULL)
+
+	// MUTEX
+	pthread_mutex_t mutex;
+    pthread_mutex_init (&mutex, NULL);
+
+	// Struct to transfer data to threads
+	thread_handles = malloc (n_threads*sizeof(pthread_t));
+
+
+	if (m_src == NULL)
 		exit(EXIT_FAILURE);
-	
+
 	// Faz a decomposicao de cholesky pelas colunas
-	for(j = 0; j < n; j++){
-		
+	for(j = 0; j < size; j++){
+
 		// eh necessario obter a diagonal antes de paralelizar os outros elementos
 		sum = 0;
-		e = j;
-		
+		//e = j;
+
 		// nao faz sentido paralelizar quando o valor de j eh menor do que o numero de threads
-		if(j >= nt){
-			for(thread = 0; thread < nt; thread++){
-				pthread_create(&thread_handles[thread], NULL, diag, (void*) thread);
+		if(j >= n_threads){
+
+			struct worker_data *threads_data=malloc(n_threads*sizeof(struct worker_data));
+
+			for(i_thread = 0; i_thread < n_threads; i_thread++){
+				threads_data[i_thread].m_dst = m_dst;
+				threads_data[i_thread].m_src = m_src;
+				threads_data[i_thread].mutex = &mutex;
+				threads_data[i_thread].n_threads = n_threads;
+				threads_data[i_thread].e = j;
+				threads_data[i_thread].size = size;
+				threads_data[i_thread].sum = sum;
+				threads_data[i_thread].i_thread = i_thread;
+
+				pthread_create(&thread_handles[i_thread], NULL, diag_worker, (void*) &threads_data[i_thread]);
 			}
-			
-			for(thread = 0; thread < nt; thread++){
-				pthread_join(thread_handles[thread], NULL);
+
+			for(i_thread = 0; i_thread < n_threads; i_thread++){
+				pthread_join(thread_handles[i_thread], NULL);
+				sum += threads_data[i_thread].sum;
 			}
 		}
 		else{
 			for(k = 0; k < j; k++) {
-				sum += L[j * n + k] * L[j * n + k];
+				sum += m_dst[j * size + k] * m_dst[j * size + k];
 			}
 		}
-		
-		L[j * n + j] = sqrt(A[j * n + j] - sum);
-		
-		// destroir o mutex criado
-		pthread_mutex_destroy(&lock);
-		
-		//diag(j, n, L, A, nt);
-		
+
+		m_dst[j * size + j] = sqrt(m_src[j * size + j] - sum);
+
+
+		//diag(j, n, Lm_dstA, n_threads);
+
 		// obtendo os outros elementos da coluna (exceto a diagonal)
-		rest(j, n, L, A, nt);
+		rest_worker(j, size, m_dst, m_src, n_threads);
 	}
-	return L;
+	pthread_mutex_destroy(&mutex);
+
+	return m_dst;
 }
 
 void show_matrix(double *A, int n){
 	int i, j;
-	
+
 	for(i = 0; i < n; i++){
 		for(j = 0; j < n; j++)
 			printf("%2.5f ", A[i * n + j]);
@@ -123,42 +155,44 @@ void show_matrix(double *A, int n){
 }
 
 int main() {
-	int n, nt, i, j;
-	double *m;
+	int size, n_threads, i, j;
+	double *m_src;
+	double *m_dst;
 	long unsigned int duracao;
 	struct timeval start, end;
-	
+
 	// Numero de threads
 	//scanf("%d",&nt);
 	// mudar manualmente enquanto esta testando, depois colocamos como input junto no arquivo in
-	
-	nt=2; // mudar enquanto esta testando, depois colocamos como input junto no arquivo in
-	
+
+	n_threads=2; // mudar enquanto esta testando, depois colocamos como input junto no arquivo in
+
 	// Dimensao da matriz
-	scanf("%d",&n);
-	
-	
+	scanf("%d",&size);
+
+
 	// A matriz sera alocada na forma de vetor
 	// Alocando a memoria para o vetor m
-	m = (double *)calloc(n*n,sizeof(double));
-	
-	for(i = 0; i < n; i++) {
-		for(j = 0; j < n; j++)
-			scanf("%lf", &m[i * n + j]);
+	m_src = (double *)calloc(size*size,sizeof(double));
+
+	for(i = 0; i < size; i++) {
+		for(j = 0; j < size; j++)
+			scanf("%lf", &m_src[i * size + j]);
 	}
-	
+
 	gettimeofday(&start, NULL);
-	double *c1 = cholesky(m, n, nt);
+	m_dst = cholesky(m_src, size, n_threads);
 	gettimeofday(&end, NULL);
-	
+
 	duracao = ((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec));
-	
+
 	printf("%lu\n",duracao);
-	
-	show_matrix(c1, n);
+
+	show_matrix(m_dst, size);
 	printf("\n");
-	free(c1);
-	
+	free(m_src);
+	free(m_dst);
+
 	return 0;
-	
+
 }
