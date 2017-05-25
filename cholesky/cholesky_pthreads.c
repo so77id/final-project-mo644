@@ -22,11 +22,9 @@ struct worker_data {
 	double sum;
 	unsigned int i_thread;
 	int size;
-
-	pthread_mutex_t *mutex;
 };
 
-void *diag_worker(void* arg){
+void *diag_worker_parallel(void* arg){
 
 	struct worker_data *dd = arg;
 
@@ -59,12 +57,42 @@ void *diag_worker(void* arg){
 	return NULL;
 }
 
-void *rest_worker(int j, int n, double *L, double *A, int nt){
+void *rest_worker_parallel(void* arg){
 	int i, k;
 	double s;
 
-	// nao mexi nessa parte, ainda tem que parelelizar o for anterior
-	//#pragma omp parallel for num_threads(nt) private(i, k, s) shared(j, n, L, A)
+	struct worker_data *dd = arg;
+
+	unsigned int my_rank = dd->i_thread; // Pega o numero da thread
+	int local_m = (dd->size - dd->e - 1)/dd->n_threads;
+	int my_first_i = my_rank*local_m;
+
+	my_first_i = my_first_i+dd->e+1;
+
+	int my_last_i = my_first_i + (local_m-1);
+	int aux;
+
+	if(my_rank==dd->n_threads-1){
+		aux = dd->size - 1 - my_last_i;
+		if(aux != 0) my_last_i = my_last_i + aux;
+	}
+
+
+	for(i = my_first_i; i <=my_last_i; i++){
+		s = 0.0;
+		for(k = 0; k < dd->e; k++){
+			s += dd->m_dst[i * dd->size + k] * dd->m_dst[dd->e * dd->size + k];
+		}
+		dd->m_dst[i * dd->size + dd->e] = (1.0 / dd->m_dst[dd->e * dd->size + dd->e] * (dd->m_src[i * dd->size + dd->e] - s));
+	}
+
+	return NULL;
+}
+
+void *rest_worker_serial(int j, int n, double *L, double *A, int nt){
+	int i, k;
+	double s;
+
 	for(i = j+1; i <n; i++){
 		s = 0.0;
 		for(k = 0; k < j; k++){
@@ -84,10 +112,6 @@ double *cholesky(double *m_src, int size, int n_threads){
 	unsigned int i_thread;
 	pthread_t* thread_handles;
 
-	// MUTEX
-	pthread_mutex_t mutex;
-    pthread_mutex_init (&mutex, NULL);
-
 	// Struct to transfer data to threads
 	thread_handles = malloc (n_threads*sizeof(pthread_t));
 
@@ -103,33 +127,33 @@ double *cholesky(double *m_src, int size, int n_threads){
 		//e = j;
 
 		// nao faz sentido paralelizar quando o valor de j eh menor do que o numero de threads
-		if(j >= n_threads){
+		//if(j >= n_threads){
 
-			struct worker_data *threads_data=malloc(n_threads*sizeof(struct worker_data));
+		struct worker_data *threads_data=malloc(n_threads*sizeof(struct worker_data));
 
-			for(i_thread = 0; i_thread < n_threads; i_thread++){
-				threads_data[i_thread].m_dst = m_dst;
-				threads_data[i_thread].m_src = m_src;
-				threads_data[i_thread].mutex = &mutex;
-				threads_data[i_thread].n_threads = n_threads;
-				threads_data[i_thread].e = j;
-				threads_data[i_thread].size = size;
-				threads_data[i_thread].sum = sum;
-				threads_data[i_thread].i_thread = i_thread;
+		for(i_thread = 0; i_thread < n_threads; i_thread++){
+			threads_data[i_thread].m_dst = m_dst;
+			threads_data[i_thread].m_src = m_src;
+			threads_data[i_thread].n_threads = n_threads;
+			threads_data[i_thread].e = j;
+			threads_data[i_thread].size = size;
+			threads_data[i_thread].sum = sum;
+			threads_data[i_thread].i_thread = i_thread;
 
-				pthread_create(&thread_handles[i_thread], NULL, diag_worker, (void*) &threads_data[i_thread]);
-			}
-
-			for(i_thread = 0; i_thread < n_threads; i_thread++){
-				pthread_join(thread_handles[i_thread], NULL);
-				sum += threads_data[i_thread].sum;
-			}
+			pthread_create(&thread_handles[i_thread], NULL, diag_worker_parallel, (void*) &threads_data[i_thread]);
 		}
-		else{
+
+		for(i_thread = 0; i_thread < n_threads; i_thread++){
+			pthread_join(thread_handles[i_thread], NULL);
+			sum += threads_data[i_thread].sum;
+		}
+
+		//}
+		/*else{
 			for(k = 0; k < j; k++) {
 				sum += m_dst[j * size + k] * m_dst[j * size + k];
 			}
-		}
+		}*/
 
 		m_dst[j * size + j] = sqrt(m_src[j * size + j] - sum);
 
@@ -137,9 +161,32 @@ double *cholesky(double *m_src, int size, int n_threads){
 		//diag(j, n, Lm_dstA, n_threads);
 
 		// obtendo os outros elementos da coluna (exceto a diagonal)
-		rest_worker(j, size, m_dst, m_src, n_threads);
+		//rest_worker_parallel(j, size, m_dst, m_src, n_threads);
+
+		//if(size - j - 1 >= n_threads){
+			//struct worker_data *threads_data=malloc(n_threads*sizeof(struct worker_data));
+			
+		for(i_thread = 0; i_thread < n_threads; i_thread++){
+			threads_data[i_thread].m_dst = m_dst;
+			threads_data[i_thread].m_src = m_src;
+			threads_data[i_thread].n_threads = n_threads;
+			threads_data[i_thread].e = j;
+			threads_data[i_thread].size = size;
+			threads_data[i_thread].i_thread = i_thread;
+
+			pthread_create(&thread_handles[i_thread], NULL, rest_worker_parallel, (void*) &threads_data[i_thread]);
+		}
+
+		for(i_thread = 0; i_thread < n_threads; i_thread++){
+			pthread_join(thread_handles[i_thread], NULL);
+		}
+
+		/*}
+		else{
+			rest_worker_serial(j, size, m_dst, m_src, n_threads);
+		}*/
+
 	}
-	pthread_mutex_destroy(&mutex);
 
 	return m_dst;
 }
@@ -165,7 +212,7 @@ int main() {
 	//scanf("%d",&nt);
 	// mudar manualmente enquanto esta testando, depois colocamos como input junto no arquivo in
 
-	n_threads=2; // mudar enquanto esta testando, depois colocamos como input junto no arquivo in
+	n_threads=4; // mudar enquanto esta testando, depois colocamos como input junto no arquivo in
 
 	// Dimensao da matriz
 	scanf("%d",&size);

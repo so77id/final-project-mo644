@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <omp.h>
-
+#include <sys/time.h>
 
 double *cholesky(double *A, int n, int nt) {
 	double *L = (double *)calloc(n*n,sizeof(double));
@@ -48,11 +48,12 @@ void show_matrix(double *A, int n) {
 int main() {
 	int n, nt;
 	double *m;
-	double start, end;
+	long unsigned int duracao;
+	struct timeval start, end;
 	
 	// Numero de threads
 	//scanf("%d",&nt);
-	nt=2; // mudar manualmente enquanto esta testando, depois colocamos como input junto no arquivo in
+	nt=4; // mudar manualmente enquanto esta testando, depois colocamos como input junto no arquivo in
 	
 	// Dimensao da matriz
 	scanf("%d",&n);
@@ -67,10 +68,13 @@ int main() {
 	}
 	
 	
-	start = omp_get_wtime();
+	gettimeofday(&start, NULL);
 	double *c1 = cholesky(m, n, nt);
-	end = omp_get_wtime();
-	printf("%lf\n",end-start);
+	gettimeofday(&end, NULL);
+
+	duracao = ((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec));
+	
+	printf("%lu\n",duracao);
 	
 	show_matrix(c1, n);
 	printf("\n");
