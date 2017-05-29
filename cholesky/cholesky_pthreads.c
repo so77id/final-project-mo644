@@ -31,7 +31,7 @@ void *diag_worker_parallel(void* arg){
 	int k;
 	double s;
 
-	long my_rank = dd->i_thread; // Pega o numero da thread
+	unsigned int my_rank = dd->i_thread; // Pega o numero da thread
 	int local_m = dd->e/dd->n_threads;
 	int my_first_k = my_rank*local_m;
 	int my_last_k = (my_rank+1)*local_m-1;
@@ -165,7 +165,7 @@ double *cholesky(double *m_src, int size, int n_threads){
 
 		//if(size - j - 1 >= n_threads){
 			//struct worker_data *threads_data=malloc(n_threads*sizeof(struct worker_data));
-			
+
 		for(i_thread = 0; i_thread < n_threads; i_thread++){
 			threads_data[i_thread].m_dst = m_dst;
 			threads_data[i_thread].m_src = m_src;
@@ -201,7 +201,13 @@ void show_matrix(double *A, int n){
 	}
 }
 
-int main() {
+int main(int argc, char const *argv[]) {
+	if (argc < 2) {
+		printf("To execute this program need send nthreads for argv\n");
+		printf("./name n_threads\n");
+		return(-1);
+	}
+
 	int size, n_threads, i, j;
 	double *m_src;
 	double *m_dst;
@@ -212,7 +218,7 @@ int main() {
 	//scanf("%d",&nt);
 	// mudar manualmente enquanto esta testando, depois colocamos como input junto no arquivo in
 
-	n_threads=4; // mudar enquanto esta testando, depois colocamos como input junto no arquivo in
+	n_threads = int(argv[1]); // mudar enquanto esta testando, depois colocamos como input junto no arquivo in
 
 	// Dimensao da matriz
 	scanf("%d",&size);
