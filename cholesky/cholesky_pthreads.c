@@ -29,15 +29,12 @@ void *diag_worker_parallel(void* arg){
 	struct worker_data *dd = arg;
 
 	int k;
-	double s;
 
 	unsigned int my_rank = dd->i_thread; // Pega o numero da thread
 	int local_m = dd->e/dd->n_threads;
 	int my_first_k = my_rank*local_m;
 	int my_last_k = (my_rank+1)*local_m-1;
 	int aux;
-
-	s = 0.0;
 
 	// Caso o valor de j (ou e) nao seja divisivel pelo numero de threads
 	// alocamos os valores que ainda faltam de j na ultima thread
@@ -89,25 +86,9 @@ void *rest_worker_parallel(void* arg){
 	return NULL;
 }
 
-void *rest_worker_serial(int j, int n, double *L, double *A, int nt){
-	int i, k;
-	double s;
-
-	for(i = j+1; i <n; i++){
-		s = 0.0;
-		for(k = 0; k < j; k++){
-			s += L[i * n + k] * L[j * n + k];
-		}
-		L[i * n + j] = (1.0 / L[j * n + j] * (A[i * n + j] - s));
-	}
-
-	return NULL;
-}
-
 double *cholesky(double *m_src, int size, int n_threads){
 	double *m_dst = (double *)calloc(size*size,sizeof(double));
-	int j, k, i;
-	double s;
+	int j;
 	double sum;
 	unsigned int i_thread;
 	pthread_t* thread_handles;
@@ -218,7 +199,7 @@ int main(int argc, char const *argv[]) {
 	//scanf("%d",&nt);
 	// mudar manualmente enquanto esta testando, depois colocamos como input junto no arquivo in
 
-	n_threads = int(argv[1]); // mudar enquanto esta testando, depois colocamos como input junto no arquivo in
+	n_threads = atoi(argv[1]); // mudar enquanto esta testando, depois colocamos como input junto no arquivo in
 
 	// Dimensao da matriz
 	scanf("%d",&size);
@@ -239,10 +220,10 @@ int main(int argc, char const *argv[]) {
 
 	duracao = ((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec));
 
-	printf("%lu\n",duracao);
 
 	show_matrix(m_dst, size);
 	printf("\n");
+	printf("%lu\n",duracao);
 	free(m_src);
 	free(m_dst);
 
