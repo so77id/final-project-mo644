@@ -14,6 +14,7 @@
 \usepackage{placeins}
 \usepackage{amssymb}
 \usepackage[]{algorithm2e}
+\usepackage{systeme}
 
 
 \geometry{a4paper,total={210mm,297mm},left=20mm,right=20mm,top=20mm,bottom=30mm,}
@@ -71,7 +72,7 @@ Guido Araújo
 \end{flushright}
 \end{minipage}\\[8cm]
 
-{\large XX de XXXX de 2017}\\[3cm]
+{\large 19 de junho de 2017}\\[3cm]
 
 \vfill
 
@@ -88,18 +89,11 @@ Guido Araújo
 \setcounter{page}{1}
 \setcounter{figure}{0}
 
-
-\begin{changemargin}{1.2cm}{1.2cm}
-	\begin{center}
-		\bfseries Resumo \par
-	\end{center}
-	\setlength{\parindent}{1em}
-	
-	Processos que utilizam matrizes são muito comuns em diversas áreas do conhecimento. O tempo de computação destes métodos está diretamente relacionado com a dimensão de tais estruturas matemáticas, assim, resolver os problemas de grandes matrizes significa um maior tempo de processamento. Um problema simples, porém muito recorrente, pode ser a resolução de um sistema linear, em que o número de operações pode se tornar relativamente grande, dependendo da aplicação em questão. No âmbito desse problema, alguns métodos como a Fatoração de Cholesky são adotados. Nessa linha, temos a intenção de fazer uma comparação exaustiva do método de Cholesky usando algumas ferramentas estudadas em aula (OpenMP, Pthreads e CUDA). Esta comparação permitirá observar e analisar como o desempenho do algoritmo pode ser melhorado quando implementado em paralelo.
-	
-\end{changemargin}
-
 \section{Introdução}
+\label{sec:introducao}
+
+Processos que utilizam matrizes são muito comuns em diversas áreas do conhecimento. O tempo de computação destes métodos está diretamente relacionado com a dimensão de tais estruturas matemáticas, assim, resolver os problemas de grandes matrizes significa um maior tempo de processamento. Um problema simples, porém muito recorrente, pode ser a resolução de um sistema linear, em que o número de operações pode se tornar relativamente grande, dependendo da aplicação em questão. No âmbito desse problema, métodos como a Fatoração de Cholesky são adotados. Nessa linha, temos a intenção de fazer uma comparação exaustiva do método de Cholesky usando algumas ferramentas estudadas em aula (OpenMP, Pthreads e CUDA). Esta comparação permitirá observar e analisar como o desempenho do algoritmo pode ser melhorado quando implementado em paralelo.
+	
 
 \section{Fatoração de Cholesky}
 \label{sec:cholesky}
@@ -109,50 +103,48 @@ Sejam $A \in {\rm I\!M}_n({\rm I\!R})$ uma matriz positiva-definida e um element
 \noindent
 \textbf{Teorema} \hspace{.1cm}\textit{ Seja $A \in {\rm I\!M}_n({\rm I\!R})$ uma matriz positiva definida. Então, existe uma única matriz triangular superior $G$, com os elementos da diagonal principal positivos, tal que $A=G^tG$.}
 
-Em Algorithm \ref{algo:serial} mostramos o algoritmo serial de Cholesky (retirado de [2]). Após uma rigorosa análise, percebemos que o algoritmo está calculando iterativamente as linhas de $G^t$ (indicada no algoritmo por $L$), de modo que a linha $i+1$ depende dos resultados obtidos na iteração $i$, gerando assim um \textit{loop} DOACROSS. Além disso, no laço interno temos que o valor de $j+1$ depende do resultado de $j$, gerando um \textit{loop carried dependence}. Entretando, se trocarmos a ordem dos laços referentes as linhas e colunas ($i$ e $j$) e anticiparmos o calculo da diagonal principal, não teríamos mais dependencia entre o \textit{loop} interno (agora em $i$), porém, o laço externo continua não paralelizável. Em Algorithm \ref{algo:serial2} exibimos esse novo código serial, que agora pode ser paralelizado. Portanto, daqui para frente, utilizaremos sempre o Algorithm \ref{algo:serial2}.
+Desse modo, a resolução do sistema linear positivo definido poderia ser resolvido da seguinte maneira
+\[
+\systeme*{G^ty=b, Gx=y}
+\] que pode apresentar resultados mais eficientes do que quanto comparado com a maneira tradicional (escalonamento, por exemplo). No nosso trabalho, temos o objetivo de paralelizar o algoritmo que realiza a fatoração de Cholesky da matriz A, e não a resolução dos sistema linear positivo definido como um todo.
 
-\begin{algorithm}[h]
-	\For{$i=0,...,n-1$}{
-		\For{$j=0,...,i$}{
-		double $s = 0.0$\;
-			\For{$k=0,...,j-1$}{
-				$s = s + L[i*n+k]*L[j*n+k]$\;
-			}
-			\eIf{$i==j$}{
-				$L[i*n+j]=\text{sqrt}(A[i*n+i]-s)$\;
-			}{
-				$L[i*n+j]=1/L[j*n+j]*(A[i*n+j]-s)$\;
-			}
-	}
-}
-\caption{Algoritmo serial não paralelizável da Fatoração de Cholesky}
-\label{algo:serial}
-\end{algorithm}
+Na Figura \ref{Figura:1}, ilustramos brevemente a estrutura do algoritmo que realiza a Fatoração de Cholesky (retirado de [2]). Em uma rigorosa análise feita no código referente a Figura \ref{Figura:1}a, percebemos que o algoritmo serial calcula iterativamente as linhas de $G^t$ (\verb|for #1|), de modo que a linha subsequente depende do resultado obtido na iteração anterior, gerando um \textit{loop} DOACROSS. Além disso, no segundo laço (\verb|for #2|), que é responsável por percorrer as colunas, temos que a iteração seguinte depende do cálculo da anterior, gerando assim um \textit{loop carried dependence}. Entretando, se trocarmos a ordem dos laços \verb|#1| e \verb|#2| e anteciparmos o cálculo da diagonal principal, como evidenciado na Figura \ref{Figura:1}b, não teríamos mais dependencia no \textit{loop} interno, agora \verb|#1|, porém, o laço externo (\verb|#2|) ainda continua não paralelizável. Desse modo, daqui em diante, utilizaremos a versão modificada do algoritmo da Fatoração de Cholesky.
 
-\begin{algorithm}[h]
-	\For{$j=0,...,n-1$}{
-		double $s = 0.0$\;
-		\For{$k=0,...,j-1$}{
-			$s = s + L[j*n+k]*L[j*n+k]$\;
-		}
-		$L[j*n+j]=\text{sqrt}(A[j*n+j]-s)$\;
-		
-		\For{$i=j+1,...,n-1$}{
-			double $s = 0.0$\;
-			\For{$k=0,...,j-1$}{
-				$s = s + L[i*n+k]*L[j*n+k]$\;
-			}
-			$L[i*n+j]=1/L[j*n+j]*(A[i*n+j]-s)$\;
-		}
-	}
-\caption{Algoritmo serial paralelizável da Fatoração de Cholesky}
-\label{algo:serial2}
-\end{algorithm}
+\begin{figure}[h]
+	\centering
+	\begin{subfigure}[b]{.39\linewidth}
+		\includegraphics[width=\linewidth]{serial_original.pdf}
+		\caption{Original}
+	\end{subfigure}
+	\hspace{.5cm}
+	\begin{subfigure}[b]{.39\linewidth}
+		\includegraphics[width=\linewidth]{serial_modificado.pdf}
+		\caption{Modificado}
+	\end{subfigure}
+	\caption{Ilustração do algoritmo serial e sua versão modificada.}
+	\label{Figura:1}
+\end{figure}
 \FloatBarrier
 
 \section{\textit{Profile}}
+\label{sec:profile}
+
+O \textit{profile} foi realizado utilizando a versão modificada do algoritmo serial.
 
 \section{Descrição da paralelização}
+
+Na Figura \ref{Figura:2} apresentamos uma ilustração que traduz as partes que foram paralelizadas do nosso algoritmo, levando em consideração o que foi discutido nas Seções \ref{sec:cholesky} e \ref{sec:profile}.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.7]{parallel.pdf}
+	\begin{center}
+		\setlength{\belowcaptionskip}{-30pt}
+		\caption{Estrutura da função da Fatoração de Cholesky, com destaque para as áreas paralelizadas.}
+		\label{Figura:2}
+	\end{center}
+\end{figure}
+\FloatBarrier
 
 \section{Resultados}
 
