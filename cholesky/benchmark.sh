@@ -5,9 +5,9 @@ EXECUTABLE_SERIAL=cholesky_serial.bin
 EXECUTABLE_OPENMP=cholesky_openmp.bin
 EXECUTABLE_PTHREAD=cholesky_pthreads.bin
 
-ITERATIONS=10
+ITERATIONS=1
 
-INPUTS=("$INPUT_FOLDER/matrix_3x3.in" "$INPUT_FOLDER/matrix_5x5.in" "$INPUT_FOLDER/matrix_50x50.in" "$INPUT_FOLDER/matrix_100x100.in" "$INPUT_FOLDER/matrix_500x500.in" "$INPUT_FOLDER/matrix_1000x1000.in" "$INPUT_FOLDER/matrix_2000x2000.in" "$INPUT_FOLDER/matrix_3000x3000.in")
+INPUTS=("$INPUT_FOLDER/matrix_3x3.in" "$INPUT_FOLDER/matrix_5x5.in" "$INPUT_FOLDER/matrix_50x50.in" "$INPUT_FOLDER/matrix_100x100.in" "$INPUT_FOLDER/matrix_500x500.in" "$INPUT_FOLDER/matrix_1000x1000.in" "$INPUT_FOLDER/matrix_2000x2000.in" "$INPUT_FOLDER/matrix_3000x3000.in" "$INPUT_FOLDER/matrix_5000x5000.in")
 N_THREADS=(1 2 4 8 16 24 32)
 
 SERIAL_TIMES=()
