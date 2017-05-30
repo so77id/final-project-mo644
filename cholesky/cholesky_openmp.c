@@ -4,7 +4,7 @@
 #include <omp.h>
 #include <sys/time.h>
 
-double *cholesky(double *A, int n, int nt) {
+double *cholesky(double *A, int n, int n_threads) {
 	double *L = (double *)calloc(n*n,sizeof(double));
 	int j, k, i;
 	double s;
@@ -17,7 +17,7 @@ double *cholesky(double *A, int n, int nt) {
 		s = 0.0;
 
 		// eh necessario obter a diagonal antes de paralelizar os outros elementos
-		# pragma omp parallel for num_threads(nt) default(none) shared(L, n, j) private(k) reduction(+: s)
+		# pragma omp parallel for num_threads(n_threads) default(none) shared(L, n, j) private(k) reduction(+: s)
 		for(k = 0; k < j; k++) {
 			s += L[j * n + k] * L[j * n + k];
 		}
@@ -25,7 +25,7 @@ double *cholesky(double *A, int n, int nt) {
 		L[j * n + j] = sqrt(A[j * n + j] - s);
 
 		// obtendo os outros elementos da coluna (exceto a diagonal)
-		#pragma omp parallel for num_threads(nt) private(i, k, s) shared(j, n, L, A)
+		#pragma omp parallel for num_threads(n_threads) private(i, k, s) shared(j, n, L, A)
 		for(i = j+1; i <n; i++) {
 			s = 0.0;
 			for(k = 0; k < j; k++) {
@@ -45,15 +45,20 @@ void show_matrix(double *A, int n) {
 	}
 }
 
-int main() {
-	int n, nt;
+int main(int argc, char const *argv[]) {
+	if (argc < 2) {
+		printf("To execute this program need send nthreads for argv\n");
+		printf("./name n_threads\n");
+		return(-1);
+	}
+	int n, n_threads;
 	double *m;
 	long unsigned int duracao;
 	struct timeval start, end;
 
 	// Numero de threads
 	//scanf("%d",&nt);
-	nt=4; // mudar manualmente enquanto esta testando, depois colocamos como input junto no arquivo in
+	n_threads = atoi(argv[1]); // mudar enquanto esta testando, depois colocamos como input junto no arquivo in
 
 	// Dimensao da matriz
 	scanf("%d",&n);
@@ -69,7 +74,7 @@ int main() {
 
 
 	gettimeofday(&start, NULL);
-	double *c1 = cholesky(m, n, nt);
+	double *c1 = cholesky(m, n, n_threads);
 	gettimeofday(&end, NULL);
 	duracao = ((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec));
 
