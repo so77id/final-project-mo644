@@ -1,4 +1,5 @@
 # Cholesky Makefile
+BINARY_FOLDER=binaries
 PROGRAM="Cholesky"
 GCC=gcc-6
 FLAGS=-std=c99 -pedantic -Wall
@@ -14,28 +15,33 @@ EXECUTABLE_OPENMP=cholesky_openmp.bin
 FILENAME_PTHREAD=cholesky_pthreads.c
 EXECUTABLE_PTHREAD=cholesky_pthreads.bin
 
-build b: build-serial build-openmp build-pthreads
+build b: create-folder build-serial build-openmp build-pthreads
 	@echo "[Building] Cholesky's"
-build-serial bs: clean-serial
+create-folder cf:
+	@echo "[Creating] Folder"
+	@mkdir -p $(BINARY_FOLDER)
+build-serial bs: create-folder clean-serial
 	@echo "[Building] Cholesky serial"
-	@$(GCC) $(FLAGS) $(FILENAME_SERIAL) -o $(EXECUTABLE_SERIAL)
-build-openmp bo: clean-openmp
+	@$(GCC) $(FLAGS) $(FILENAME_SERIAL) -o $(BINARY_FOLDER)/$(EXECUTABLE_SERIAL)
+build-openmp bo: create-folder clean-openmp
 	@echo "[Building] Cholesky openmp"
-	@$(GCC) $(FLAGS) $(OPENMP_FLAG) $(FILENAME_OPENMP) -o $(EXECUTABLE_OPENMP)
-build-pthreads bp: clean-pthreads
+	@$(GCC) $(FLAGS) $(OPENMP_FLAG) $(FILENAME_OPENMP) -o $(BINARY_FOLDER)/$(EXECUTABLE_OPENMP)
+build-pthreads bp: create-folder clean-pthreads
 	@echo "[Building] Cholesky pthreads"
-	@$(GCC) $(FLAGS) $(PTHREAD_FLAG) $(FILENAME_PTHREAD) -o $(EXECUTABLE_PTHREAD)
+	@$(GCC) $(FLAGS) $(PTHREAD_FLAG) $(FILENAME_PTHREAD) -o $(BINARY_FOLDER)/$(EXECUTABLE_PTHREAD)
 clean-serial cs:
 	@echo "[Clean] Cholesky serial"
-	@rm -f $(EXECUTABLE_SERIAL)
+	@rm -f $(BINARY_FOLDER)/$(EXECUTABLE_SERIAL)
 clean-openmp co:
 	@echo "[Clean] Cholesky openmp"
-	@rm -f $(EXECUTABLE_OPENMP)
+	@rm -f $(BINARY_FOLDER)/$(EXECUTABLE_OPENMP)
 clean-pthreads cp:
 	@echo "[Clean] Cholesky pthreads"
-	@rm -f $(EXECUTABLE_PTHREAD)
+	@rm -f $(BINARY_FOLDER)/$(EXECUTABLE_PTHREAD)
 clean c: clean-serial clean-openmp clean-pthreads
 	@echo "[clean] Cleaning files..."
+	@rm -R $(BINARY_FOLDER)
+	@mkdir -p $(BINARY_FOLDER)
 help:
 	@echo ""
 	@echo "Makefile for $(PROGRAM)"
