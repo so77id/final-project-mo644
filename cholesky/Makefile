@@ -2,7 +2,7 @@
 BINARY_FOLDER=binaries
 PROGRAM="Cholesky"
 GCC=gcc-6
-FLAGS=-std=c99 -pedantic -Wall
+FLAGS=-std=c99 -pedantic -Wall -lm
 PTHREAD_FLAG=-lpthread
 OPENMP_FLAG=-fopenmp
 
