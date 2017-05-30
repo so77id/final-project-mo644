@@ -91,27 +91,20 @@ double *cholesky(double *m_src, int size, int n_threads){
 	int j;
 	double sum;
 	unsigned int i_thread;
-	pthread_t* thread_handles;
-
-	// Struct to transfer data to threads
-	thread_handles = malloc (n_threads*sizeof(pthread_t));
-
+	pthread_t* thread_handles = malloc (n_threads*sizeof(pthread_t));
+	struct worker_data *threads_data=malloc(n_threads*sizeof(struct worker_data));
 
 	if (m_src == NULL)
 		exit(EXIT_FAILURE);
 
 	// Faz a decomposicao de cholesky pelas colunas
+
+
 	for(j = 0; j < size; j++){
 
-		// eh necessario obter a diagonal antes de paralelizar os outros elementos
 		sum = 0;
-		//e = j;
 
-		// nao faz sentido paralelizar quando o valor de j eh menor do que o numero de threads
-		//if(j >= n_threads){
-
-		struct worker_data *threads_data=malloc(n_threads*sizeof(struct worker_data));
-
+		//diag_worker_parallel
 		for(i_thread = 0; i_thread < n_threads; i_thread++){
 			threads_data[i_thread].m_dst = m_dst;
 			threads_data[i_thread].m_src = m_src;
@@ -129,31 +122,11 @@ double *cholesky(double *m_src, int size, int n_threads){
 			sum += threads_data[i_thread].sum;
 		}
 
-		//}
-		/*else{
-			for(k = 0; k < j; k++) {
-				sum += m_dst[j * size + k] * m_dst[j * size + k];
-			}
-		}*/
-
 		m_dst[j * size + j] = sqrt(m_src[j * size + j] - sum);
 
-
-		//diag(j, n, Lm_dstA, n_threads);
-
-		// obtendo os outros elementos da coluna (exceto a diagonal)
-		//rest_worker_parallel(j, size, m_dst, m_src, n_threads);
-
-		//if(size - j - 1 >= n_threads){
-			//struct worker_data *threads_data=malloc(n_threads*sizeof(struct worker_data));
+		//rest
 
 		for(i_thread = 0; i_thread < n_threads; i_thread++){
-			threads_data[i_thread].m_dst = m_dst;
-			threads_data[i_thread].m_src = m_src;
-			threads_data[i_thread].n_threads = n_threads;
-			threads_data[i_thread].e = j;
-			threads_data[i_thread].size = size;
-			threads_data[i_thread].i_thread = i_thread;
 
 			pthread_create(&thread_handles[i_thread], NULL, rest_worker_parallel, (void*) &threads_data[i_thread]);
 		}
@@ -162,13 +135,10 @@ double *cholesky(double *m_src, int size, int n_threads){
 			pthread_join(thread_handles[i_thread], NULL);
 		}
 
-		/*}
-		else{
-			rest_worker_serial(j, size, m_dst, m_src, n_threads);
-		}*/
-
 	}
 
+	free(threads_data);
+	free(thread_handles);
 	return m_dst;
 }
 
