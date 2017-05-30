@@ -47,9 +47,7 @@ help:
 	@echo "Makefile for $(PROGRAM)"
 	@echo ""
 	@echo "make []"
-	@echo "   - build  : compile service"
-	@echo "   - linux  : compile service to linux"
+	@echo "   - build  : compile programs"
 	@echo "   - clean  : remove all compiled code"
-	@echo "   - docker : create docker container"
 	@echo ""
 .PHONY: serve build linux docker help%
