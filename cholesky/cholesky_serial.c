@@ -65,10 +65,10 @@ int main() {
 	gettimeofday(&end, NULL);
 	duracao = ((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec));
 
-	printf("%lu\n",duracao);
 
 	show_matrix(c1, n);
 	printf("\n");
+	printf("%lu\n",duracao);
 	free(c1);
 
 	return 0;
