@@ -5,6 +5,8 @@
 #include <sys/time.h>
 
 double *cholesky(double *A, int n, int n_threads) {
+	//Creating a thread's poll
+	omp_set_num_threads(n_threads);
 	double *L = (double *)calloc(n*n,sizeof(double));
 	int j, k, i;
 	double s;
