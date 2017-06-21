@@ -100,6 +100,15 @@ double *cholesky(double *m_src, int size, int n_threads){
 	// Faz a decomposicao de cholesky pelas colunas
 
 
+	for(i_thread = 0; i_thread < n_threads; i_thread++){
+			threads_data[i_thread].m_dst = m_dst;
+			threads_data[i_thread].m_src = m_src;
+			threads_data[i_thread].n_threads = n_threads;
+			threads_data[i_thread].size = size;
+			threads_data[i_thread].i_thread = i_thread;
+	}
+
+
 	for(j = 0; j < size; j++){
 
 		sum = 0;
