@@ -166,7 +166,6 @@ struct worker_data
     struct queue *q;
     pthread_mutex_t *mutex;
     pthread_barrier_t *barrier;
-    int n_threads;
     double *m_dst;
     double *m_src;
     int size;
@@ -185,24 +184,19 @@ void * worker(void * args) {
 
     while(1) {
         pthread_mutex_lock(wd->mutex);
-        //printf("Antes del empty\n");
-        //print_queue(wd->q);
 
         if(empty(wd->q)){
             if(wd->producer_finish) {
-                printf("PROUDCED FINISH\n");
                 pthread_mutex_unlock(wd->mutex);
                 break;
             }
             else if(wd->producer_iter_finish){
                 wd->in_barrier++;
-                printf("sumado al barrier in_barrier: %d\n", wd->in_barrier);
                 pthread_mutex_unlock(wd->mutex);
                 pthread_barrier_wait(wd->barrier);
                 continue;
             }
             else{
-                printf("producer no finish in_barrier: %d, producer_finish: %d\n", wd->in_barrier, wd->producer_finish);
                 pthread_mutex_unlock(wd->mutex);
                 continue;
             }
@@ -211,9 +205,7 @@ void * worker(void * args) {
         pthread_mutex_unlock(wd->mutex);
 
         if(wd->mode == 0) {
-            //pthread_mutex_lock(wd->mutex);
             wd->sum += wd->m_dst[wd->j * wd->size + i] * wd->m_dst[wd->j * wd->size + i];
-            //pthread_mutex_unlock(wd->mutex);
         } else if(wd->mode == 1) {
             s = 0.0;
             for(k = 0; k < wd->j; k++) {
@@ -222,8 +214,6 @@ void * worker(void * args) {
 
             wd->m_dst[i * wd->size + wd->j] = (1.0 / wd->m_dst[wd->j * wd->size + wd->j] * (wd->m_src[i * wd->size + wd->j] - s));
         }
-
-        //printf("Saque i: %d\n", i);
     }
 }
 
@@ -237,20 +227,19 @@ double *cholesky(double *m_src, int size, int n_threads){
     double *m_dst = (double *)calloc(size*size,sizeof(double));
 
     unsigned int i, j, k, i_thread;
-    pthread_t* diag_threads = malloc (n_threads*sizeof(pthread_t));
+    pthread_t* threads = malloc (n_threads*sizeof(pthread_t));
 
     // Creating and init mutex
-    pthread_mutex_t diag_mutex;
-    pthread_barrier_t diag_barrier;
-    pthread_mutex_init (&diag_mutex, NULL);
-    pthread_barrier_init(&diag_barrier, NULL, n_threads + 1);
+    pthread_mutex_t mutex;
+    pthread_barrier_t barrier;
+    pthread_mutex_init (&mutex, NULL);
+    pthread_barrier_init(&barrier, NULL, n_threads + 1);
 
     struct worker_data *wd = malloc(sizeof(struct worker_data));
 
     wd->q = init_queue();
-    wd->mutex = &diag_mutex;
-    wd->barrier = &diag_barrier;
-    wd->n_threads = n_threads;
+    wd->mutex = &mutex;
+    wd->barrier = &barrier;
     wd->m_dst = m_dst;
     wd->m_src = m_src;
     wd->size = size;
@@ -260,20 +249,17 @@ double *cholesky(double *m_src, int size, int n_threads){
     wd->mode = 0;
 
     for(i_thread = 0; i_thread < n_threads; i_thread++){
-        pthread_create(&diag_threads[i_thread], NULL, worker, (void*) wd);
+        pthread_create(&threads[i_thread], NULL, worker, (void*) wd);
     }
 
     for(j = 0; j < size; j++){
-        printf("Iter: %d\n", j);
         wd->j = j;
         wd->sum = 0.0;
         wd->producer_iter_finish = 0;
         wd->mode = 0;
 
 
-        printf("MODE 0\n");
         for(k = 0; k < j; k++) {
-            printf("ENCOLANDO MODE 0 %d\n", k);
             pthread_mutex_lock(wd->mutex);
             enqueue(wd->q, k);
             pthread_mutex_unlock(wd->mutex);
@@ -286,23 +272,16 @@ double *cholesky(double *m_src, int size, int n_threads){
             #endif
         }
 
-        printf("SALI WHILE MODE 0\n");
-        //GET SUM
         wd->m_dst[wd->j * wd->size + wd->j] = sqrt(wd->m_src[wd->j * wd->size + wd->j] - wd->sum);
 
         wd->in_barrier = 0;
         wd->producer_iter_finish = 0;
         pthread_barrier_wait(wd->barrier);
 
-        //printf("OUT BARRIER MODE 0\n");
-        // MODE 1
-
-        //printf("MODE 1\n");
         wd->mode = 1;
 
 
         for(i = wd->j+1; i < wd->size; i++) {
-            //printf("ENCOLANDO MODE 1 %d\n", k);
             pthread_mutex_lock(wd->mutex);
             enqueue(wd->q, i);
             pthread_mutex_unlock(wd->mutex);
@@ -320,25 +299,22 @@ double *cholesky(double *m_src, int size, int n_threads){
         wd->producer_iter_finish = 0;
         pthread_barrier_wait(wd->barrier);
 
-        //printf("OUT BARRIER MODE 1\n");
     }
-    //printf("FINISH\n");
+
     wd->producer_finish = 1;
 
 
 
-    //printf("JOIN THREADS\n");
     for(i_thread = 0; i_thread < n_threads; i_thread++){
-        pthread_join(diag_threads[i_thread], NULL);
-        //printf("Termine threads\n");
+        pthread_join(threads[i_thread], NULL);
     }
 
-    pthread_mutex_destroy(&diag_mutex);
-    pthread_barrier_destroy(&diag_barrier);
+    pthread_mutex_destroy(&mutex);
+    pthread_barrier_destroy(&barrier);
 
     delete_queue(wd->q);
     free(wd);
-    free(diag_threads);
+    free(threads);
     return m_dst;
 }
 
@@ -365,18 +341,11 @@ int main(int argc, char const *argv[]) {
     long unsigned int duracao;
     struct timeval start, end;
 
-    // Numero de threads
-    //scanf("%d",&nt);
-    // mudar manualmente enquanto esta testando, depois colocamos como input junto no arquivo in
-
     n_threads = atoi(argv[1]); // mudar enquanto esta testando, depois colocamos como input junto no arquivo in
 
-    // Dimensao da matriz
     scanf("%d",&size);
 
 
-    // A matriz sera alocada na forma de vetor
-    // Alocando a memoria para o vetor m
     m_src = (double *)calloc(size*size,sizeof(double));
 
     for(i = 0; i < size; i++) {
