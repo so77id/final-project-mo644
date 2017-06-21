@@ -280,9 +280,7 @@ double *cholesky(double *m_src, int size, int n_threads){
         }
         wd->producer_iter_finish = 1;
 
-        while(wd->in_barrier != n_threads) {
-            pthread_yield(NULL);
-        }
+        while(wd->in_barrier != n_threads);
 
         printf("SALI WHILE MODE 0\n");
         //GET SUM
@@ -307,11 +305,8 @@ double *cholesky(double *m_src, int size, int n_threads){
         }
 
         wd->producer_iter_finish = 1;
-        while(1){
-            printf("IN WHILE MODE 1\n");
-            if(wd->in_barrier == n_threads) break;
-            //pthread_yield();
-        }
+
+        while(wd->in_barrier != n_threads);
 
         wd->in_barrier = 0;
         wd->producer_iter_finish = 0;
