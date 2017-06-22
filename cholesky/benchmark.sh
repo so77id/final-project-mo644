@@ -1,9 +1,9 @@
 BINARY_FOLDER=binaries
 INPUT_FOLDER='../inputs'
 
-EXECUTABLE_SERIAL=cholesky_serial.bin
+EXECUTABLE_SERIAL=cholesky_serial_for_parallel.bin
 EXECUTABLE_OPENMP=cholesky_openmp.bin
-EXECUTABLE_PTHREAD=cholesky_pthreads.bin
+EXECUTABLE_PTHREAD=cholesky_pthreads_prodcon.bin
 
 ITERATIONS=5
 
@@ -51,6 +51,9 @@ do
 
 done
 
+echo "---------------------------------------------------"
+echo "--------------------OPENMP-------------------------"
+echo "---------------------------------------------------"
 
 T=0
 for (( J = 0; J < ${#INPUTS[@]}; J++ ));
@@ -75,6 +78,10 @@ done
 
 
 
+
+echo "---------------------------------------------------"
+echo "--------------------PTHREAD------------------------"
+echo "---------------------------------------------------"
 T=0
 for (( J = 0; J < ${#INPUTS[@]}; J++ ));
 do

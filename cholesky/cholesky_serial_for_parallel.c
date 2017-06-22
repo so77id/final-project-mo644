@@ -43,7 +43,7 @@ void show_matrix(double *A, int n) {
 }
 
 int main() {
-	int n, nt;
+	int n;
 	double *m;
 	struct timeval start, end;
 	long unsigned int duracao;
