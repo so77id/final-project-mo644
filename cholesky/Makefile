@@ -1,8 +1,8 @@
 # Cholesky Makefile
 BINARY_FOLDER=binaries
 PROGRAM="Cholesky"
-GCC=gcc-6
-FLAGS=-std=c99 -pedantic  -Wall -lm -g -O0
+GCC=gcc
+FLAGS=-std=c99 -pedantic  -Wall -lm -g -O2
 PTHREAD_FLAG=-lpthread
 OPENMP_FLAG=-fopenmp
 
