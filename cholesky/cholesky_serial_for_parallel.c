@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <omp.h>
+#include <sys/time.h>
 
 
 double *cholesky(double *A, int n) {
