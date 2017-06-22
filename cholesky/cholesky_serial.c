@@ -39,14 +39,10 @@ void show_matrix(double *A, int n) {
 }
 
 int main() {
-	int n, nt, i, j;
+	int n, i, j;
 	double *m;
 	struct timeval start, end;
 	long unsigned int duracao;
-
-	// Numero de threads
-	//scanf("%d",&nt);
-	nt=2; // mudar manualmente enquanto esta testando, depois colocamos como input junto no arquivo in
 
 	// Dimensao da matriz m
 	scanf("%d",&n);

@@ -211,7 +211,6 @@ void * worker(void * args) {
             for(k = 0; k < wd->j; k++) {
                 s += wd->m_dst[i * wd->size + k] * wd->m_dst[wd->j * wd->size + k];
             }
-
             wd->m_dst[i * wd->size + wd->j] = (1.0 / wd->m_dst[wd->j * wd->size + wd->j] * (wd->m_src[i * wd->size + wd->j] - s));
         }
     }
