@@ -2,7 +2,7 @@
 BINARY_FOLDER=binaries
 PROGRAM="Cholesky"
 GCC=gcc
-FLAGS=-std=c99 -pedantic  -Wall -lm -g -O2
+FLAGS=-std=c99 -pedantic  -Wall -lm -g
 PTHREAD_FLAG=-lpthread
 OPENMP_FLAG=-fopenmp
 
@@ -15,13 +15,16 @@ EXECUTABLE_SERIAL_FOR_PARALLEL=cholesky_serial_for_parallel.bin
 FILENAME_OPENMP=cholesky_openmp.c
 EXECUTABLE_OPENMP=cholesky_openmp.bin
 
+FILENAME_OPENMP_THREADPOOL=cholesky_openmp_threadspool.c
+EXECUTABLE_OPENMP_THREADPOOL=cholesky_openmp_threadspool.bin
+
 FILENAME_PTHREAD=cholesky_pthreads.c
 EXECUTABLE_PTHREAD=cholesky_pthreads.bin
 
 FILENAME_PTHREAD_PRODCON=cholesky_pthreads_prodcon.c
 EXECUTABLE_PTHREAD_PRODCON=cholesky_pthreads_prodcon.bin
 
-build b: create-folder build-serial build-serial-for-parallel build-openmp build-pthreads build-pthreads_prodcon
+build b: create-folder build-serial build-serial-for-parallel build-openmp build-pthreads build-pthreads_prodcon build-openmp-threadpool
 	@echo "[Building] Cholesky's"
 create-folder cf:
 	@echo "[Creating] Folder"
@@ -38,6 +41,10 @@ build-serial-for-parallel bsfp: create-folder clean-serial-for-parallel
 build-openmp bo: create-folder clean-openmp
 	@echo "[Building] Cholesky openmp"
 	@$(GCC) $(FILENAME_OPENMP) -o $(BINARY_FOLDER)/$(EXECUTABLE_OPENMP) $(FLAGS) $(OPENMP_FLAG)
+
+build-openmp-threadpool botp: create-folder clean-openmp
+	@echo "[Building] Cholesky openmp threadpool"
+	@$(GCC) $(FILENAME_OPENMP) -o $(BINARY_FOLDER)/$(EXECUTABLE_OPENMP_THREADPOOL) $(FLAGS) $(OPENMP_FLAG)
 
 build-pthreads bp: create-folder clean-pthreads
 	@echo "[Building] Cholesky pthreads"
