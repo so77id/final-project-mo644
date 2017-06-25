@@ -3,6 +3,7 @@
 #include <math.h>
 #include <sys/time.h>
 #include <pthread.h>
+#include <sched.h>
 
 
 /**************************************
@@ -214,6 +215,8 @@ void * worker(void * args) {
             wd->m_dst[i * wd->size + wd->j] = (1.0 / wd->m_dst[wd->j * wd->size + wd->j] * (wd->m_src[i * wd->size + wd->j] - s));
         }
     }
+
+    return NULL;
 }
 
 
@@ -266,9 +269,7 @@ double *cholesky(double *m_src, int size, int n_threads){
         wd->producer_iter_finish = 1;
 
         while(wd->in_barrier != n_threads) {
-            #ifndef __APPLE__
-            pthread_yield(NULL);
-            #endif
+            sched_yield();
         }
 
         wd->m_dst[wd->j * wd->size + wd->j] = sqrt(wd->m_src[wd->j * wd->size + wd->j] - wd->sum);
@@ -289,9 +290,7 @@ double *cholesky(double *m_src, int size, int n_threads){
         wd->producer_iter_finish = 1;
 
         while(wd->in_barrier != n_threads) {
-            #ifndef __APPLE__
-            pthread_yield(NULL);
-            #endif
+            sched_yield();
         }
 
         wd->in_barrier = 0;

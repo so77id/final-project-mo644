@@ -17,7 +17,7 @@ double *cholesky(double *A, int n){
 	// Faz a decomposicao de cholesky pelas linhas (modo nao paralelizavel)
 	// Nos algoritmos com openmp e pthreads foi necessario reescrever esse trecho de codigo
 	// de modo a torná-lo paralelizavel
-	for(i = 0; i < n; i++)
+	for(i = 0; i < n; i++){
 		for(j = 0; j < (i+1); j++) {
 			s = 0.0;
 			for(k = 0; k < j; k++)
@@ -25,7 +25,8 @@ double *cholesky(double *A, int n){
 			if(i == j) L[i * n + j] = sqrt(A[i * n + i] - s);
 			else L[i * n + j] = (1.0 / L[j * n + j] * (A[i * n + j] - s));
 		}
-		return L;
+	}
+	return L;
 }
 
 void show_matrix(double *A, int n) {
