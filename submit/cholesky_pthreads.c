@@ -4,15 +4,6 @@
 #include <sys/time.h>
 #include <pthread.h>
 
-// Comentarios iniciais
-// o programa ainda nao funciona, nao sei o motivo
-
-
-// variaveis globais
-// int e, n, nt;
-//double *L, *A;
-//double sum;
-//pthread_mutex_t lock;
 
 struct worker_data {
 	int e;
@@ -30,14 +21,11 @@ void *diag_worker_parallel(void* arg){
 
 	int k;
 
-	unsigned int my_rank = dd->i_thread; // Pega o numero da thread
+	unsigned int my_rank = dd->i_thread;
 	int local_m = dd->e/dd->n_threads;
 	int my_first_k = my_rank*local_m;
 	int my_last_k = (my_rank+1)*local_m-1;
 	int aux;
-
-	// Caso o valor de j (ou e) nao seja divisivel pelo numero de threads
-	// alocamos os valores que ainda faltam de j na ultima thread
 
 	if(my_rank==dd->n_threads-1){
 		aux = (my_last_k - my_first_k + 1)*dd->n_threads;
@@ -48,9 +36,6 @@ void *diag_worker_parallel(void* arg){
 		dd->sum += dd->m_dst[dd->e * dd->size + k] * dd->m_dst[dd->e * dd->size + k];
 	}
 
-	// calculamos o valor de s localmente em cada thread e depois incorporamos na variavel global sum
-	// o mutex serve para nao ter conflito na hora de atualizar
-
 	return NULL;
 }
 
@@ -60,7 +45,7 @@ void *rest_worker_parallel(void* arg){
 
 	struct worker_data *dd = arg;
 
-	unsigned int my_rank = dd->i_thread; // Pega o numero da thread
+	unsigned int my_rank = dd->i_thread;
 	int local_m = (dd->size - dd->e - 1)/dd->n_threads;
 	int my_first_i = my_rank*local_m;
 
@@ -97,9 +82,6 @@ double *cholesky(double *m_src, int size, int n_threads){
 	if (m_src == NULL)
 		exit(EXIT_FAILURE);
 
-	// Faz a decomposicao de cholesky pelas colunas
-
-
 	for(i_thread = 0; i_thread < n_threads; i_thread++){
 			threads_data[i_thread].m_dst = m_dst;
 			threads_data[i_thread].m_src = m_src;
@@ -111,17 +93,11 @@ double *cholesky(double *m_src, int size, int n_threads){
 
 	for(j = 0; j < size; j++){
 
-		sum = 0;
+		sum = 0.0;
 
-		//diag_worker_parallel
 		for(i_thread = 0; i_thread < n_threads; i_thread++){
-			threads_data[i_thread].m_dst = m_dst;
-			threads_data[i_thread].m_src = m_src;
-			threads_data[i_thread].n_threads = n_threads;
 			threads_data[i_thread].e = j;
-			threads_data[i_thread].size = size;
 			threads_data[i_thread].sum = sum;
-			threads_data[i_thread].i_thread = i_thread;
 
 			pthread_create(&thread_handles[i_thread], NULL, diag_worker_parallel, (void*) &threads_data[i_thread]);
 		}
@@ -133,7 +109,6 @@ double *cholesky(double *m_src, int size, int n_threads){
 
 		m_dst[j * size + j] = sqrt(m_src[j * size + j] - sum);
 
-		//rest
 
 		for(i_thread = 0; i_thread < n_threads; i_thread++){
 
@@ -174,18 +149,10 @@ int main(int argc, char const *argv[]) {
 	long unsigned int duracao;
 	struct timeval start, end;
 
-	// Numero de threads
-	//scanf("%d",&nt);
-	// mudar manualmente enquanto esta testando, depois colocamos como input junto no arquivo in
+	n_threads = atoi(argv[1]);
 
-	n_threads = atoi(argv[1]); // mudar enquanto esta testando, depois colocamos como input junto no arquivo in
-
-	// Dimensao da matriz
 	scanf("%d",&size);
 
-
-	// A matriz sera alocada na forma de vetor
-	// Alocando a memoria para o vetor m
 	m_src = (double *)calloc(size*size,sizeof(double));
 
 	for(i = 0; i < size; i++) {

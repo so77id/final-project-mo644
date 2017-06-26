@@ -3,7 +3,6 @@ INPUT_FOLDER='./input'
 
 EXECUTABLE_SERIAL=cholesky_serial.bin
 EXECUTABLE_OPENMP=cholesky_openmp.bin
-EXECUTABLE_OPENMP_THREADPOOL=cholesky_openmp_threadspool.bin
 EXECUTABLE_PTHREAD=cholesky_pthreads.bin
 EXECUTABLE_PTHREAD_PRODCON=cholesky_pthreads_prodcon.bin
 
@@ -40,17 +39,6 @@ do
 
         SPEEDUP=$(bc -l <<< ${SERIAL_TIME}/${OPENMP_TIME})
         printf "OpenMP SPEEDUP: %4.7f\n" ${SPEEDUP}
-
-        #OPENMP THREADPOOL
-        OPENMP_POOL_TIME=0
-        for (( i = 0; i < ${ITERATIONS}; i++ )); do
-            TIME=$("./${BINARY_FOLDER}/${EXECUTABLE_OPENMP_THREADPOOL}" $N_THREAD < ${INPUT} | tail -n 1 | awk '{print $1}')
-            OPENMP_POOL_TIME=$(bc -l <<< "$OPENMP_POOL_TIME + $TIME")
-        done
-        OPENMP_POOL_TIME=$(bc -l <<< ${OPENMP_POOL_TIME}/${ITERATIONS})
-
-        SPEEDUP=$(bc -l <<< ${SERIAL_TIME}/${OPENMP_POOL_TIME})
-        printf "OpenMP ThreadPool SPEEDUP: %4.7f\n" ${SPEEDUP}
 
         #PTHREAD
         PTHREAD_TIME=0

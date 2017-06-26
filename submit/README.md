@@ -14,7 +14,7 @@ Email: m.rodriguezs1990@gmail.com
 ## Makefile
 
 A `Makefile` has been created with the following commands:
-* `make`: This command creates a folder called `binaries` in which compiles the four codes created for the benchmark.
+* `make`: This command creates a folder called `binaries` in which compiles the three codes created for the benchmark.
 * `make clean`: This commnad delete all the content of the `binaries` folder.
 *  `make run`: This command runs the benchmark with the input files in the `input` folder, which will be run with different number of threads (16, 24 and 32).
 
@@ -29,7 +29,6 @@ The files will be compiled are:
 * `cholesky_serial.c`: original version of Cholesky's descomposition.
 *  `cholesky_serial_for_parallel.c`: serial version, which is parallelizable (slower than the original).
 *  `cholesky_openmp.c`: parallelization using the `OpenMP` tools.
-*  `cholesky_openmp_threadspool.c`: parallelization using the `OpenMp` tools, with a difference that threads are created before of the `#pragma` clauses.
 *  `cholesky_pthreads.c`: parallelization using `Pthreads` tool, in which the number of calculations is divided for each thread.
 *  `cholesky_pthreads_prodcon.c`: implementation of producer-consumer architecture with `Pthreads`.
 
@@ -74,19 +73,16 @@ The `speedup` is calculated as: `parallel time / serial time`
 --------------------------
 Number of threads: 16
 OpenMP SPEEDUP: 2.0587971
-OpenMP ThreadPool SPEEDUP: 2.0935601
 Pthread SPEEDUP: 1.8232368
 Pthread Producer consumer SPEEDUP: 0.0179181
 
 Number of threads: 24
 OpenMP SPEEDUP: 1.6803953
-OpenMP ThreadPool SPEEDUP: 1.6907165
 Pthread SPEEDUP: 1.4147363
 Pthread Producer consumer SPEEDUP: 0.0114220
 
 Number of threads: 32
 OpenMP SPEEDUP: 1.4583506
-OpenMP ThreadPool SPEEDUP: 1.4356311
 Pthread SPEEDUP: 1.0219771
 Pthread Producer consumer SPEEDUP: 0.0114220
 
@@ -95,19 +91,16 @@ Pthread Producer consumer SPEEDUP: 0.0114220
 --------------------------
 Number of threads: 16
 OpenMP SPEEDUP: 2.0587971
-OpenMP ThreadPool SPEEDUP: 2.0935601
 Pthread SPEEDUP: 1.8232368
 Pthread Producer consumer SPEEDUP: 0.0179181
 
 Number of threads: 24
 OpenMP SPEEDUP: 1.6803953
-OpenMP ThreadPool SPEEDUP: 1.6907165
 Pthread SPEEDUP: 1.4147363
 Pthread Producer consumer SPEEDUP: 0.0114220
 
 Number of threads: 32
 OpenMP SPEEDUP: 1.4583506
-OpenMP ThreadPool SPEEDUP: 1.4356311
 Pthread SPEEDUP: 1.0219771
 Pthread Producer consumer SPEEDUP: 0.0114220
 
@@ -116,19 +109,16 @@ Pthread Producer consumer SPEEDUP: 0.0114220
 --------------------------
 Number of threads: 16
 OpenMP SPEEDUP: 2.0587971
-OpenMP ThreadPool SPEEDUP: 2.0935601
 Pthread SPEEDUP: 1.8232368
 Pthread Producer consumer SPEEDUP: 0.0179181
 
 Number of threads: 24
 OpenMP SPEEDUP: 1.6803953
-OpenMP ThreadPool SPEEDUP: 1.6907165
 Pthread SPEEDUP: 1.4147363
 Pthread Producer consumer SPEEDUP: 0.0114220
 
 Number of threads: 32
 OpenMP SPEEDUP: 1.4583506
-OpenMP ThreadPool SPEEDUP: 1.4356311
 Pthread SPEEDUP: 1.0219771
 Pthread Producer consumer SPEEDUP: 0.0114220
 ```
