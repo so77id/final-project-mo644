@@ -1,5 +1,5 @@
 BINARY_FOLDER=binaries
-INPUT_FOLDER='../inputs'
+INPUT_FOLDER='./input'
 
 EXECUTABLE_SERIAL=cholesky_serial.bin
 EXECUTABLE_OPENMP=cholesky_openmp.bin
@@ -7,10 +7,10 @@ EXECUTABLE_OPENMP_THREADPOOL=cholesky_openmp_threadspool.bin
 EXECUTABLE_PTHREAD=cholesky_pthreads.bin
 EXECUTABLE_PTHREAD_PRODCON=cholesky_pthreads_prodcon.bin
 
-ITERATIONS=10
+ITERATIONS=1
 N_THREADS=(16 24 32)
 
-INPUTS=("$INPUT_FOLDER/matrix_5x5.in" "$INPUT_FOLDER/matrix_50x50.in" "$INPUT_FOLDER/matrix_100x100.in")
+INPUTS=("$INPUT_FOLDER/matrix_5000x5000.in" "$INPUT_FOLDER/matrix_6000x6000.in" "$INPUT_FOLDER/matrix_7000x7000.in")
 
 
 for INPUT in "${INPUTS[@]}"

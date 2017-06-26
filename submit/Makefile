@@ -86,7 +86,7 @@ clean c: clean-serial clean-serial-for-parallel clean-openmp clean-openmp-thread
 
 run r:
 	@echo "[run] Running benchmark"
-	/bin/bash benchmark.sh > $(OUTPUT_FILE)
+	/bin/bash run.sh > $(OUTPUT_FILE)
 help:
 	@echo ""
 	@echo "Makefile for $(PROGRAM)"

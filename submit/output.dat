@@ -1,0 +1,28 @@
+
+./input/matrix_5000x5000.in
+--------------------------
+Number of threads: 16
+OpenMP SPEEDUP: 2.0587971
+OpenMP ThreadPool SPEEDUP: 2.0935601
+Pthread SPEEDUP: 1.8232368
+Pthread Producer consumer SPEEDUP: 0.0179181
+
+Number of threads: 24
+OpenMP SPEEDUP: 1.6803953
+OpenMP ThreadPool SPEEDUP: 1.6907165
+Pthread SPEEDUP: 1.4147363
+Pthread Producer consumer SPEEDUP: 0.0114220
+
+Number of threads: 32
+OpenMP SPEEDUP: 1.4583506
+OpenMP ThreadPool SPEEDUP: 1.4356311
+Pthread SPEEDUP: 1.0219771
+Pthread Producer consumer SPEEDUP: 0.0089902
+
+
+./input/matrix_6000x6000.in
+--------------------------
+Number of threads: 16
+OpenMP SPEEDUP: 2.0531686
+OpenMP ThreadPool SPEEDUP: 2.1667359
+Pthread SPEEDUP: 1.9919297
