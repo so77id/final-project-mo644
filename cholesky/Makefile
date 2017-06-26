@@ -1,8 +1,8 @@
 # Cholesky Makefile
 BINARY_FOLDER=binaries
 PROGRAM="Cholesky"
-GCC=gcc
-FLAGS=-std=c99 -pedantic  -Wall -lm -g
+GCC=gcc-6
+FLAGS=-std=c99 -pedantic -Wall -lm -g -O2
 PTHREAD_FLAG=-lpthread
 OPENMP_FLAG=-fopenmp
 
@@ -42,7 +42,7 @@ build-openmp bo: create-folder clean-openmp
 	@echo "[Building] Cholesky openmp"
 	@$(GCC) $(FILENAME_OPENMP) -o $(BINARY_FOLDER)/$(EXECUTABLE_OPENMP) $(FLAGS) $(OPENMP_FLAG)
 
-build-openmp-threadpool botp: create-folder clean-openmp
+build-openmp-threadpool botp: create-folder clean-openmp-threadpool
 	@echo "[Building] Cholesky openmp threadpool"
 	@$(GCC) $(FILENAME_OPENMP) -o $(BINARY_FOLDER)/$(EXECUTABLE_OPENMP_THREADPOOL) $(FLAGS) $(OPENMP_FLAG)
 
@@ -50,7 +50,7 @@ build-pthreads bp: create-folder clean-pthreads
 	@echo "[Building] Cholesky pthreads"
 	@$(GCC) $(FILENAME_PTHREAD) -o $(BINARY_FOLDER)/$(EXECUTABLE_PTHREAD) $(FLAGS) $(PTHREAD_FLAG)
 
-build-pthreads_prodcon bppc: create-folder clean-pthreads
+build-pthreads_prodcon bppc: create-folder clean-pthreads-prodcon
 	@echo "[Building] Cholesky pthreads producer consumer"
 	@$(GCC) $(FILENAME_PTHREAD_PRODCON) -o $(BINARY_FOLDER)/$(EXECUTABLE_PTHREAD_PRODCON) $(FLAGS) $(PTHREAD_FLAG)
 
@@ -59,25 +59,33 @@ clean-serial cs:
 	@rm -f $(BINARY_FOLDER)/$(EXECUTABLE_SERIAL)
 
 clean-serial-for-parallel csfp:
-	@echo "[Clean] Cholesky serial"
+	@echo "[Clean] Cholesky serial for parallel"
 	@rm -f $(BINARY_FOLDER)/$(EXECUTABLE_SERIAL_FOR_PARALLEL)
 
 clean-openmp co:
 	@echo "[Clean] Cholesky openmp"
 	@rm -f $(BINARY_FOLDER)/$(EXECUTABLE_OPENMP)
 
+clean-openmp-threadpool cotp:
+	@echo "[Clean] Cholesky openmp threadpool"
+	@rm -f $(BINARY_FOLDER)/$(EXECUTABLE_OPENMP_THREADPOOL)
+
 clean-pthreads cp:
 	@echo "[Clean] Cholesky pthreads"
 	@rm -f $(BINARY_FOLDER)/$(EXECUTABLE_PTHREAD)
 
-clean-pthreads_prodcon cppc:
+clean-pthreads-prodcon cppc:
 	@echo "[Clean] Cholesky pthreads producer consumer"
 	@rm -f $(BINARY_FOLDER)/$(EXECUTABLE_PTHREAD_PRODCON)
 
-clean c: clean-serial clean-openmp clean-pthreads clean-pthreads_prodcon
+clean c: clean-serial clean-serial-for-parallel clean-openmp clean-openmp-threadpool clean-pthreads clean-pthreads-prodcon
 	@echo "[clean] Cleaning files..."
 	@rm -R $(BINARY_FOLDER)
 	@mkdir -p $(BINARY_FOLDER)
+
+run r:
+	@echo "[run] Running benchmark"
+	/bin/bash run.sh
 help:
 	@echo ""
 	@echo "Makefile for $(PROGRAM)"

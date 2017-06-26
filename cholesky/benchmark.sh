@@ -73,7 +73,6 @@ do
 
         PTHREAD_PRODCON_TIMES+=($PTHREAD_TIME_PRODCON)
     done
-
 done
 
 echo "---------------------------------------------------"
