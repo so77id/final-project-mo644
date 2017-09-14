@@ -339,7 +339,7 @@ int main(int argc, char const *argv[]) {
     long unsigned int duracao;
     struct timeval start, end;
 
-    n_threads = atoi(argv[1]); // mudar enquanto esta testando, depois colocamos como input junto no arquivo in
+    n_threads = atoi(argv[1]);
 
     scanf("%d",&size);
 
