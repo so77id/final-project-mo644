@@ -59,8 +59,7 @@ int main(int argc, char const *argv[]) {
 	struct timeval start, end;
 
 	// Numero de threads
-	//scanf("%d",&nt);
-	n_threads = atoi(argv[1]); // mudar enquanto esta testando, depois colocamos como input junto no arquivo in
+	n_threads = atoi(argv[1]);
 
 	// Dimensao da matriz
 	scanf("%d",&n);
