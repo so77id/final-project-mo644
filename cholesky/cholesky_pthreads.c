@@ -4,16 +4,6 @@
 #include <sys/time.h>
 #include <pthread.h>
 
-// Comentarios iniciais
-// o programa ainda nao funciona, nao sei o motivo
-
-
-// variaveis globais
-// int e, n, nt;
-//double *L, *A;
-//double sum;
-//pthread_mutex_t lock;
-
 struct worker_data {
 	int e;
 	int n_threads;
@@ -36,9 +26,6 @@ void *diag_worker_parallel(void* arg){
 	int my_last_k = (my_rank+1)*local_m-1;
 	int aux;
 
-	// Caso o valor de j (ou e) nao seja divisivel pelo numero de threads
-	// alocamos os valores que ainda faltam de j na ultima thread
-
 	if(my_rank==dd->n_threads-1){
 		aux = (my_last_k - my_first_k + 1)*dd->n_threads;
 		if(aux != dd->e) my_last_k = my_last_k + dd->e - aux;
@@ -47,9 +34,6 @@ void *diag_worker_parallel(void* arg){
 	for(k = my_first_k; k <= my_last_k; k++){
 		dd->sum += dd->m_dst[dd->e * dd->size + k] * dd->m_dst[dd->e * dd->size + k];
 	}
-
-	// calculamos o valor de s localmente em cada thread e depois incorporamos na variavel global sum
-	// o mutex serve para nao ter conflito na hora de atualizar
 
 	return NULL;
 }
@@ -97,9 +81,6 @@ double *cholesky(double *m_src, int size, int n_threads){
 	if (m_src == NULL)
 		exit(EXIT_FAILURE);
 
-	// Faz a decomposicao de cholesky pelas colunas
-
-
 	for(i_thread = 0; i_thread < n_threads; i_thread++){
 			threads_data[i_thread].m_dst = m_dst;
 			threads_data[i_thread].m_src = m_src;
@@ -134,7 +115,6 @@ double *cholesky(double *m_src, int size, int n_threads){
 		m_dst[j * size + j] = sqrt(m_src[j * size + j] - sum);
 
 		//rest
-
 		for(i_thread = 0; i_thread < n_threads; i_thread++){
 
 			pthread_create(&thread_handles[i_thread], NULL, rest_worker_parallel, (void*) &threads_data[i_thread]);
@@ -174,18 +154,13 @@ int main(int argc, char const *argv[]) {
 	long unsigned int duracao;
 	struct timeval start, end;
 
-	// Numero de threads
-	//scanf("%d",&nt);
-	// mudar manualmente enquanto esta testando, depois colocamos como input junto no arquivo in
-
-	n_threads = atoi(argv[1]); // mudar enquanto esta testando, depois colocamos como input junto no arquivo in
+	n_threads = atoi(argv[1]);
 
 	// Dimensao da matriz
 	scanf("%d",&size);
 
 
 	// A matriz sera alocada na forma de vetor
-	// Alocando a memoria para o vetor m
 	m_src = (double *)calloc(size*size,sizeof(double));
 
 	for(i = 0; i < size; i++) {
